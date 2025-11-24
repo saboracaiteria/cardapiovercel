@@ -287,29 +287,66 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     };
 
     const addProduct = async (product: Product) => {
-        // Optimistic
-        setProducts(prev => [...prev, product]);
+        try {
+            console.log('Adicionando produto:', product);
 
-        const dbProduct = {
-            name: product.name,
-            price: product.price,
-            disabled: product.disabled,
-            type: product.type,
-            description: product.description,
-            sizes_key: product.sizesKey,
-            custom_topping_limits: product.customToppingLimits
-        };
+            // Optimistic
+            setProducts(prev => [...prev, product]);
 
-        const { data } = await supabase.from('products').insert([dbProduct]).select().single();
-        if (data) {
-            // Update with real ID from DB
-            setProducts(prev => prev.map(p => p.id === product.id ? { ...p, id: data.id } : p));
+            const dbProduct = {
+                name: product.name,
+                price: product.price,
+                disabled: product.disabled,
+                type: product.type,
+                description: product.description,
+                sizes_key: product.sizesKey,
+                custom_topping_limits: product.customToppingLimits
+            };
+
+            const { data, error } = await supabase
+                .from('products')
+                .insert([dbProduct])
+                .select()
+                .single();
+
+            if (error) {
+                console.error('Erro ao adicionar produto:', error);
+                // Reverter otimistic update
+                setProducts(prev => prev.filter(p => p.id !== product.id));
+            } else if (data) {
+                console.log('Produto adicionado com sucesso:', data);
+                // Update with real ID from DB
+                setProducts(prev => prev.map(p => p.id === product.id ? { ...p, id: data.id } : p));
+            }
+        } catch (error) {
+            console.error('Erro ao adicionar produto:', error);
+            setProducts(prev => prev.filter(p => p.id !== product.id));
         }
     };
 
     const removeProduct = async (id: number) => {
-        setProducts(prev => prev.filter(p => p.id !== id));
-        await supabase.from('products').delete().eq('id', id);
+        try {
+            console.log('Removendo produto:', id);
+
+            // Optimistic
+            setProducts(prev => prev.filter(p => p.id !== id));
+
+            const { error } = await supabase
+                .from('products')
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                console.error('Erro ao remover produto:', error);
+                // Could refetch to restore
+                await fetchData();
+            } else {
+                console.log('Produto removido com sucesso');
+            }
+        } catch (error) {
+            console.error('Erro ao remover produto:', error);
+            await fetchData();
+        }
     };
 
     const updateCupSizes = async (sizes: CupSize[]) => {
