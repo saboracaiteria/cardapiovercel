@@ -15,13 +15,13 @@ type Tab = 'dashboard' | 'products' | 'settings' | 'orders';
 const DAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
-    const { 
-        orders, settings, updateSettings, 
+    const {
+        orders, settings, updateSettings,
         products, updateProduct, addProduct, removeProduct,
         cupSizes, updateCupSizes,
-        isStoreOpen, isDeliveryAvailable, neighborhoods, updateNeighborhoods 
+        isStoreOpen, isDeliveryAvailable, neighborhoods, updateNeighborhoods
     } = useStore();
-    
+
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [password, setPassword] = useState('');
     const [activeTab, setActiveTab] = useState<Tab>('dashboard');
@@ -59,8 +59,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                     <h2 className="text-2xl font-bold text-white mb-2">Área Restrita</h2>
                     <p className="text-gray-400 mb-6">Digite a senha de administrador</p>
                     <form onSubmit={handleLogin} className="space-y-4">
-                        <input 
-                            type="password" 
+                        <input
+                            type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white text-center text-lg tracking-widest outline-none focus:border-pink-500"
@@ -79,7 +79,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
     // --- Handlers ---
     const handleManualSave = () => {
         setShowSaveToast(true);
-        setTimeout(() => setShowSaveToast(false), 3000);
+        setTimeout(() => {
+            setShowSaveToast(false);
+            // Recarregar a página para pegar dados atualizados do Supabase
+            window.location.reload();
+        }, 1500);
     };
 
     const handleUpdateNeighborhood = (index: number, field: 'name' | 'fee', value: string) => {
@@ -120,7 +124,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
     const handleAddNewProduct = () => {
         if (!newProdName) return;
         const price = parseFloat(newProdPrice) || 0;
-        
+
         const newProduct = {
             id: Date.now(),
             name: newProdName,
@@ -172,9 +176,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
         return orders.filter(order => {
             const orderDate = new Date(order.date);
             if (dateFilter === 'day') {
-                return orderDate.getDate() === now.getDate() && 
-                       orderDate.getMonth() === now.getMonth() && 
-                       orderDate.getFullYear() === now.getFullYear();
+                return orderDate.getDate() === now.getDate() &&
+                    orderDate.getMonth() === now.getMonth() &&
+                    orderDate.getFullYear() === now.getFullYear();
             }
             if (dateFilter === 'week') {
                 const oneWeekAgo = new Date();
@@ -182,8 +186,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                 return orderDate >= oneWeekAgo;
             }
             if (dateFilter === 'month') {
-                return orderDate.getMonth() === now.getMonth() && 
-                       orderDate.getFullYear() === now.getFullYear();
+                return orderDate.getMonth() === now.getMonth() &&
+                    orderDate.getFullYear() === now.getFullYear();
             }
             return true;
         });
@@ -193,7 +197,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
     const totalRevenue = filteredOrders.reduce((acc, o) => acc + o.total, 0);
     const totalDeliveryFees = filteredOrders.reduce((acc, o) => acc + o.deliveryFee, 0);
     const totalOrders = filteredOrders.length;
-    
+
     const paymentMethods = filteredOrders.reduce((acc: Record<string, number>, order) => {
         const method = order.customer.paymentMethod || 'Outro';
         acc[method] = (acc[method] || 0) + order.total;
@@ -246,7 +250,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
 
                 {/* Main Content */}
                 <main className="flex-1 overflow-y-auto p-4 md:p-8 pb-20 md:pb-8">
-                    
+
                     {/* --- DASHBOARD TAB --- */}
                     {activeTab === 'dashboard' && (
                         <div className="space-y-6">
@@ -254,7 +258,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                 <h3 className="text-2xl font-bold text-white">Resumo Financeiro</h3>
                                 <div className="flex bg-gray-800 rounded-lg p-1">
                                     {(['day', 'week', 'month'] as const).map(f => (
-                                        <button 
+                                        <button
                                             key={f}
                                             onClick={() => setDateFilter(f)}
                                             className={`px-4 py-1 rounded-md text-sm font-medium transition-colors ${dateFilter === f ? 'bg-pink-600 text-white' : 'text-gray-400 hover:text-white'}`}
@@ -311,15 +315,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                                 <h3 className="text-2xl font-bold text-white">Gerenciar Cardápio</h3>
                                 <div className="flex gap-2 w-full md:w-auto">
-                                    <Button 
+                                    <Button
                                         onClick={handleManualSave}
                                         variant="secondary"
                                         className="flex-1 md:flex-none text-sm py-2 bg-blue-700 hover:bg-blue-600"
                                     >
                                         <Save size={16} /> Salvar Alterações
                                     </Button>
-                                    <Button 
-                                        onClick={() => setIsAddingProduct(true)} 
+                                    <Button
+                                        onClick={() => setIsAddingProduct(true)}
                                         variant="success"
                                         className="flex-1 md:flex-none text-sm py-2"
                                     >
@@ -335,7 +339,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                         <div>
                                             <label className="text-xs text-gray-400 block mb-1">Tipo</label>
-                                            <select 
+                                            <select
                                                 value={newProdType}
                                                 onChange={(e) => setNewProdType(e.target.value as any)}
                                                 className="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white"
@@ -346,8 +350,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                         </div>
                                         <div>
                                             <label className="text-xs text-gray-400 block mb-1">Nome do Item</label>
-                                            <input 
-                                                type="text" 
+                                            <input
+                                                type="text"
                                                 value={newProdName}
                                                 onChange={(e) => setNewProdName(e.target.value)}
                                                 className="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white"
@@ -357,8 +361,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                     </div>
                                     <div className="mb-4">
                                         <label className="text-xs text-gray-400 block mb-1">Descrição / Sugestão</label>
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             value={newProdDesc}
                                             onChange={(e) => setNewProdDesc(e.target.value)}
                                             className="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white"
@@ -368,8 +372,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                     {newProdType === 'base_acai' && (
                                         <div className="mb-4">
                                             <label className="text-xs text-gray-400 block mb-1">Preço Base (R$)</label>
-                                            <input 
-                                                type="number" 
+                                            <input
+                                                type="number"
                                                 value={newProdPrice}
                                                 onChange={(e) => setNewProdPrice(e.target.value)}
                                                 className="w-32 bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white"
@@ -401,8 +405,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                             <p className="text-gray-400 text-sm font-bold mb-2 text-center">{size.name}</p>
                                             <div className="flex items-center justify-center gap-1">
                                                 <span className="text-gray-500 text-sm">R$</span>
-                                                <input 
-                                                    type="number" 
+                                                <input
+                                                    type="number"
                                                     step="0.50"
                                                     value={size.price}
                                                     onChange={(e) => handleUpdateCupSize(index, e.target.value)}
@@ -423,16 +427,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                             <div key={product.id} className="bg-gray-800 border border-gray-700 rounded-xl p-4 flex flex-col md:flex-row gap-4 items-start md:items-center">
                                                 <div className="flex-1 w-full">
                                                     <div className="flex justify-between mb-2">
-                                                        <input 
-                                                            type="text" 
+                                                        <input
+                                                            type="text"
                                                             value={product.name}
                                                             onChange={(e) => updateProduct(product.id, { name: e.target.value })}
                                                             className="bg-transparent text-lg font-bold text-white border-b border-transparent focus:border-pink-500 outline-none w-full"
                                                         />
                                                         <div className="flex gap-2">
-                                                             <label className="flex items-center cursor-pointer relative mr-2">
-                                                                <input 
-                                                                    type="checkbox" 
+                                                            <label className="flex items-center cursor-pointer relative mr-2">
+                                                                <input
+                                                                    type="checkbox"
                                                                     className="sr-only peer"
                                                                     checked={!product.disabled}
                                                                     onChange={() => updateProduct(product.id, { disabled: !product.disabled })}
@@ -442,7 +446,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                                             <button onClick={() => handleDeleteProduct(product.id)} className="text-red-500 hover:text-red-300"><Trash2 size={18} /></button>
                                                         </div>
                                                     </div>
-                                                    <input 
+                                                    <input
                                                         type="text"
                                                         value={product.description || ''}
                                                         onChange={(e) => updateProduct(product.id, { description: e.target.value })}
@@ -452,8 +456,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                                 </div>
                                                 <div className="flex items-center gap-2 bg-gray-900 p-2 rounded-lg whitespace-nowrap">
                                                     <span className="text-xs text-gray-500">Preço Base: R$</span>
-                                                    <input 
-                                                        type="number" 
+                                                    <input
+                                                        type="number"
                                                         step="0.50"
                                                         value={product.price}
                                                         onChange={(e) => updateProduct(product.id, { price: parseFloat(e.target.value) })}
@@ -472,10 +476,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                 <div className="grid grid-cols-1 gap-4">
                                     {comboProducts.map(product => (
                                         <div key={product.id} className="bg-gray-800 border border-gray-700 rounded-xl p-4 relative group">
-                                             <div className="flex justify-between items-start mb-3">
+                                            <div className="flex justify-between items-start mb-3">
                                                 <div className="flex-1">
-                                                    <input 
-                                                        type="text" 
+                                                    <input
+                                                        type="text"
                                                         value={product.name}
                                                         onChange={(e) => updateProduct(product.id, { name: e.target.value })}
                                                         className="bg-transparent text-base font-bold text-white border-b border-transparent focus:border-pink-500 outline-none w-full"
@@ -483,8 +487,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                                 </div>
                                                 <div className="flex gap-3 ml-4">
                                                     <label className="flex items-center cursor-pointer relative">
-                                                        <input 
-                                                            type="checkbox" 
+                                                        <input
+                                                            type="checkbox"
                                                             className="sr-only peer"
                                                             checked={!product.disabled}
                                                             onChange={() => updateProduct(product.id, { disabled: !product.disabled })}
@@ -493,16 +497,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                                     </label>
                                                     <button onClick={() => handleDeleteProduct(product.id)} className="text-red-500 hover:text-red-300"><Trash2 size={18} /></button>
                                                 </div>
-                                             </div>
-                                             <div>
+                                            </div>
+                                            <div>
                                                 <label className="text-[10px] text-gray-500 uppercase font-bold">Descrição / Ingredientes</label>
-                                                <input 
+                                                <input
                                                     type="text"
                                                     value={product.description || ''}
                                                     onChange={(e) => updateProduct(product.id, { description: e.target.value })}
                                                     className="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-gray-300 text-sm focus:border-pink-500 outline-none"
                                                 />
-                                             </div>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -514,14 +518,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                     {activeTab === 'settings' && (
                         <div className="max-w-2xl space-y-6">
                             <h3 className="text-2xl font-bold text-white">Configurações da Loja</h3>
-                            
+
                             <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 space-y-4">
                                 <h4 className="font-bold text-white border-b border-gray-700 pb-2">Status & Delivery</h4>
-                                
+
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="text-sm text-gray-400 block mb-1">Status da Loja</label>
-                                        <select 
+                                        <select
                                             value={settings.storeStatus}
                                             onChange={(e) => updateSettings({ storeStatus: e.target.value as any })}
                                             className="w-full bg-gray-900 border border-gray-600 rounded-lg p-2 text-white"
@@ -533,7 +537,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                     </div>
                                     <div>
                                         <label className="text-sm text-gray-400 block mb-1">Modo de Entrega</label>
-                                        <select 
+                                        <select
                                             value={settings.deliveryMode}
                                             onChange={(e) => updateSettings({ deliveryMode: e.target.value as any })}
                                             className="w-full bg-gray-900 border border-gray-600 rounded-lg p-2 text-white"
@@ -557,29 +561,29 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                     <Clock size={18} className="text-pink-500" />
                                     Horários de Funcionamento
                                 </h4>
-                                
+
                                 <div className="space-y-3">
                                     {DAYS.map((dayName, index) => {
                                         const isOpen = settings.openDays.includes(index);
                                         const hours = settings.dailyHours[index] || { open: '00:00', close: '00:00' };
-                                        
+
                                         return (
                                             <div key={index} className="flex flex-col md:flex-row md:items-center gap-3 bg-gray-900/50 p-3 rounded-lg border border-gray-800">
                                                 <div className="w-32 flex items-center gap-2">
-                                                    <input 
-                                                        type="checkbox" 
+                                                    <input
+                                                        type="checkbox"
                                                         checked={isOpen}
                                                         onChange={() => handleDayToggle(index)}
                                                         className="w-4 h-4 accent-pink-500"
                                                     />
                                                     <span className={`font-bold ${isOpen ? 'text-white' : 'text-gray-500'}`}>{dayName}</span>
                                                 </div>
-                                                
+
                                                 <div className={`flex-1 flex gap-4 transition-opacity ${isOpen ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}>
                                                     <div className="flex-1">
                                                         <label className="text-[10px] text-gray-400 block mb-1">Abertura</label>
-                                                        <input 
-                                                            type="time" 
+                                                        <input
+                                                            type="time"
                                                             value={hours.open}
                                                             onChange={(e) => handleTimeChange(index, 'open', e.target.value)}
                                                             className="bg-gray-800 text-white border border-gray-600 rounded px-2 py-1 text-sm w-full"
@@ -587,8 +591,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                                     </div>
                                                     <div className="flex-1">
                                                         <label className="text-[10px] text-gray-400 block mb-1">Fechamento</label>
-                                                        <input 
-                                                            type="time" 
+                                                        <input
+                                                            type="time"
                                                             value={hours.close}
                                                             onChange={(e) => handleTimeChange(index, 'close', e.target.value)}
                                                             className="bg-gray-800 text-white border border-gray-600 rounded px-2 py-1 text-sm w-full"
@@ -603,8 +607,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                 <div className="pt-4 border-t border-gray-700 grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="text-xs text-gray-400 block mb-1">Início Delivery (Semana)</label>
-                                        <input 
-                                            type="time" 
+                                        <input
+                                            type="time"
                                             value={settings.weekdayDeliveryStartTime}
                                             onChange={(e) => updateSettings({ weekdayDeliveryStartTime: e.target.value })}
                                             className="bg-gray-900 text-white border border-gray-600 rounded px-3 py-2 text-sm w-full"
@@ -612,8 +616,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                     </div>
                                     <div>
                                         <label className="text-xs text-gray-400 block mb-1">Início Delivery (Fim de Semana)</label>
-                                        <input 
-                                            type="time" 
+                                        <input
+                                            type="time"
                                             value={settings.weekendDeliveryStartTime}
                                             onChange={(e) => updateSettings({ weekendDeliveryStartTime: e.target.value })}
                                             className="bg-gray-900 text-white border border-gray-600 rounded px-3 py-2 text-sm w-full"
@@ -628,7 +632,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                 <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
                                     {neighborhoods.map((hood, idx) => (
                                         <div key={idx} className="flex items-center gap-2 bg-gray-900/50 p-2 rounded-lg">
-                                            <input 
+                                            <input
                                                 type="text"
                                                 value={hood.name}
                                                 onChange={(e) => handleUpdateNeighborhood(idx, 'name', e.target.value)}
@@ -637,7 +641,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                             />
                                             <div className="flex items-center gap-1 bg-gray-800 rounded px-2 py-1">
                                                 <span className="text-xs text-gray-500">R$</span>
-                                                <input 
+                                                <input
                                                     type="number"
                                                     step="0.50"
                                                     value={hood.fee}
@@ -645,7 +649,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                                     className="w-12 bg-transparent border-none outline-none text-white text-sm text-right"
                                                 />
                                             </div>
-                                            <button 
+                                            <button
                                                 onClick={() => handleDeleteNeighborhood(idx)}
                                                 className="text-red-500 hover:bg-red-900/30 p-1.5 rounded"
                                             >
@@ -654,16 +658,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                         </div>
                                     ))}
                                 </div>
-                                
+
                                 <div className="pt-2 border-t border-gray-700 flex gap-2">
-                                    <input 
+                                    <input
                                         type="text"
                                         value={newHoodName}
                                         onChange={(e) => setNewHoodName(e.target.value)}
                                         placeholder="Novo Bairro"
                                         className="flex-1 bg-gray-900 border border-gray-600 rounded px-3 py-2 text-sm text-white"
                                     />
-                                    <input 
+                                    <input
                                         type="number"
                                         value={newHoodFee}
                                         onChange={(e) => setNewHoodFee(e.target.value)}
@@ -680,8 +684,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                 <h4 className="font-bold text-white border-b border-gray-700 pb-2">Informações de Contato</h4>
                                 <div>
                                     <label className="text-sm text-gray-400 block mb-1">WhatsApp (apenas números)</label>
-                                    <input 
-                                        type="text" 
+                                    <input
+                                        type="text"
                                         value={settings.whatsappNumber}
                                         onChange={(e) => updateSettings({ whatsappNumber: e.target.value })}
                                         className="w-full bg-gray-900 border border-gray-600 rounded-lg p-2 text-white"
@@ -689,8 +693,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                 </div>
                                 <div>
                                     <label className="text-sm text-gray-400 block mb-1">Endereço (Cidade/Bairro)</label>
-                                    <input 
-                                        type="text" 
+                                    <input
+                                        type="text"
                                         value={settings.address}
                                         onChange={(e) => updateSettings({ address: e.target.value })}
                                         className="w-full bg-gray-900 border border-gray-600 rounded-lg p-2 text-white"
@@ -707,43 +711,43 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                     {/* --- ORDERS HISTORY TAB --- */}
                     {activeTab === 'orders' && (
                         <div className="space-y-6">
-                             <h3 className="text-2xl font-bold text-white">Histórico Completo</h3>
-                             <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
-                                 <div className="overflow-x-auto">
-                                     <table className="w-full text-left text-sm text-gray-400">
-                                         <thead className="bg-gray-900 text-gray-200 uppercase font-bold">
-                                             <tr>
-                                                 <th className="p-4">Data</th>
-                                                 <th className="p-4">Cliente</th>
-                                                 <th className="p-4">Tipo</th>
-                                                 <th className="p-4">Pagamento</th>
-                                                 <th className="p-4 text-right">Total</th>
-                                             </tr>
-                                         </thead>
-                                         <tbody className="divide-y divide-gray-700">
-                                             {orders.map(order => (
-                                                 <tr key={order.id} className="hover:bg-gray-750">
-                                                     <td className="p-4">
-                                                         <div className="font-bold text-white">{new Date(order.date).toLocaleDateString()}</div>
-                                                         <div className="text-xs">{new Date(order.date).toLocaleTimeString()}</div>
-                                                     </td>
-                                                     <td className="p-4 text-white">{order.customer.name}</td>
-                                                     <td className="p-4">
-                                                         <span className={`px-2 py-1 rounded text-xs font-bold ${order.customer.deliveryOption === 'delivery' ? 'bg-blue-900 text-blue-200' : 'bg-orange-900 text-orange-200'}`}>
-                                                             {order.customer.deliveryOption === 'delivery' ? 'Delivery' : 'Retirada'}
-                                                         </span>
-                                                     </td>
-                                                     <td className="p-4">{order.customer.paymentMethod}</td>
-                                                     <td className="p-4 text-right font-bold text-white">{formatCurrency(order.total)}</td>
-                                                 </tr>
-                                             ))}
-                                             {orders.length === 0 && (
-                                                 <tr><td colSpan={5} className="p-8 text-center">Nenhum registro encontrado.</td></tr>
-                                             )}
-                                         </tbody>
-                                     </table>
-                                 </div>
-                             </div>
+                            <h3 className="text-2xl font-bold text-white">Histórico Completo</h3>
+                            <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left text-sm text-gray-400">
+                                        <thead className="bg-gray-900 text-gray-200 uppercase font-bold">
+                                            <tr>
+                                                <th className="p-4">Data</th>
+                                                <th className="p-4">Cliente</th>
+                                                <th className="p-4">Tipo</th>
+                                                <th className="p-4">Pagamento</th>
+                                                <th className="p-4 text-right">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-700">
+                                            {orders.map(order => (
+                                                <tr key={order.id} className="hover:bg-gray-750">
+                                                    <td className="p-4">
+                                                        <div className="font-bold text-white">{new Date(order.date).toLocaleDateString()}</div>
+                                                        <div className="text-xs">{new Date(order.date).toLocaleTimeString()}</div>
+                                                    </td>
+                                                    <td className="p-4 text-white">{order.customer.name}</td>
+                                                    <td className="p-4">
+                                                        <span className={`px-2 py-1 rounded text-xs font-bold ${order.customer.deliveryOption === 'delivery' ? 'bg-blue-900 text-blue-200' : 'bg-orange-900 text-orange-200'}`}>
+                                                            {order.customer.deliveryOption === 'delivery' ? 'Delivery' : 'Retirada'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-4">{order.customer.paymentMethod}</td>
+                                                    <td className="p-4 text-right font-bold text-white">{formatCurrency(order.total)}</td>
+                                                </tr>
+                                            ))}
+                                            {orders.length === 0 && (
+                                                <tr><td colSpan={5} className="p-8 text-center">Nenhum registro encontrado.</td></tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     )}
 
@@ -754,7 +758,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
 };
 
 const SidebarItem = ({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void }) => (
-    <button 
+    <button
         onClick={onClick}
         className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${active ? 'bg-pink-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}
     >
@@ -764,7 +768,7 @@ const SidebarItem = ({ icon, label, active, onClick }: { icon: React.ReactNode, 
 );
 
 const MobileTab = ({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void }) => (
-    <button 
+    <button
         onClick={onClick}
         className={`flex flex-col items-center gap-1 p-2 ${active ? 'text-pink-500' : 'text-gray-500'}`}
     >
