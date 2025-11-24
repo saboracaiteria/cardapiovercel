@@ -10,42 +10,72 @@ const StatusBanners: React.FC = () => {
     const [bannerType, setBannerType] = useState<'closing' | 'opening' | 'delivery' | null>(null);
 
     useEffect(() => {
-        const now = new Date();
-        const currentDay = now.getDay();
-        const todayHours = settings.dailyHours[currentDay];
+        try {
+            const now = new Date();
+            const currentDay = now.getDay();
+            const todayHours = settings.dailyHours?.[currentDay];
 
-        let target: Date | null = null;
-        let type: 'closing' | 'opening' | 'delivery' | null = null;
-
-        if (isStoreOpen) {
-            // Check closing time
-            const [closeH, closeM] = todayHours.close.split(':').map(Number);
-            const closeTime = new Date(now);
-            closeTime.setHours(closeH, closeM, 0, 0);
-            
-            // Check delivery start
-            const deliveryStartStr = (currentDay === 0 || currentDay === 6) 
-                ? settings.weekendDeliveryStartTime 
-                : settings.weekdayDeliveryStartTime;
-            const [delH, delM] = deliveryStartStr.split(':').map(Number);
-            const deliveryTime = new Date(now);
-            deliveryTime.setHours(delH, delM, 0, 0);
-
-            if (!isDeliveryAvailable && deliveryTime > now) {
-                target = deliveryTime;
-                type = 'delivery';
-            } else {
-                target = closeTime;
-                type = 'closing';
+            // Check if we have valid hours data
+            if (!todayHours || !todayHours.close || !todayHours.open) {
+                setTargetDate(null);
+                setBannerType(null);
+                return;
             }
-        } else {
-            // Store closed, check opening
-            target = getNextOpeningDate(settings);
-            type = 'opening';
-        }
 
-        setTargetDate(target);
-        setBannerType(type);
+            let target: Date | null = null;
+            let type: 'closing' | 'opening' | 'delivery' | null = null;
+
+            if (isStoreOpen) {
+                // Check closing time
+                const [closeH, closeM] = todayHours.close.split(':').map(Number);
+                if (isNaN(closeH) || isNaN(closeM)) {
+                    setTargetDate(null);
+                    setBannerType(null);
+                    return;
+                }
+
+                const closeTime = new Date(now);
+                closeTime.setHours(closeH, closeM, 0, 0);
+
+                // Check delivery start
+                const deliveryStartStr = (currentDay === 0 || currentDay === 6)
+                    ? settings.weekendDeliveryStartTime
+                    : settings.weekdayDeliveryStartTime;
+
+                if (deliveryStartStr) {
+                    const [delH, delM] = deliveryStartStr.split(':').map(Number);
+                    if (!isNaN(delH) && !isNaN(delM)) {
+                        const deliveryTime = new Date(now);
+                        deliveryTime.setHours(delH, delM, 0, 0);
+
+                        if (!isDeliveryAvailable && deliveryTime > now) {
+                            target = deliveryTime;
+                            type = 'delivery';
+                        } else {
+                            target = closeTime;
+                            type = 'closing';
+                        }
+                    } else {
+                        target = closeTime;
+                        type = 'closing';
+                    }
+                } else {
+                    target = closeTime;
+                    type = 'closing';
+                }
+            } else {
+                // Store closed, check opening
+                target = getNextOpeningDate(settings);
+                type = 'opening';
+            }
+
+            setTargetDate(target);
+            setBannerType(type);
+        } catch (error) {
+            console.error('Error in StatusBanners:', error);
+            setTargetDate(null);
+            setBannerType(null);
+        }
     }, [isStoreOpen, isDeliveryAvailable, settings]);
 
     useEffect(() => {
@@ -65,10 +95,9 @@ const StatusBanners: React.FC = () => {
     return (
         <>
             {/* Sticky Timer Top Left */}
-            <div className={`fixed top-4 left-4 z-40 bg-gray-900/90 backdrop-blur border border-gray-700 rounded-full px-4 py-1.5 shadow-xl flex items-center gap-2 text-xs font-medium ${
-                bannerType === 'closing' ? 'text-red-400' : 
-                bannerType === 'opening' ? 'text-green-400' : 'text-blue-400'
-            }`}>
+            <div className={`fixed top-4 left-4 z-40 bg-gray-900/90 backdrop-blur border border-gray-700 rounded-full px-4 py-1.5 shadow-xl flex items-center gap-2 text-xs font-medium ${bannerType === 'closing' ? 'text-red-400' :
+                    bannerType === 'opening' ? 'text-green-400' : 'text-blue-400'
+                }`}>
                 {bannerType === 'delivery' ? <Bike size={14} /> : <Clock size={14} />}
                 <span className="text-gray-200">
                     {bannerType === 'closing' && 'Fecha em: '}
@@ -86,7 +115,7 @@ const StatusBanners: React.FC = () => {
                         <p className="text-sm opacity-80">O cardápio está disponível para visualização.</p>
                     </div>
                 )}
-                
+
                 {isStoreOpen && !isDeliveryAvailable && (
                     <div className="bg-blue-900/40 border border-blue-800 text-blue-200 p-4 rounded-xl text-center">
                         <p className="font-bold">Entregas em breve!</p>
