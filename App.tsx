@@ -56,9 +56,15 @@ const WhatsAppFloat = () => {
 }
 
 const AppContent: React.FC = () => {
-    const { clearCart } = useStore();
+    const { clearCart, refreshData } = useStore();
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [isAdminOpen, setIsAdminOpen] = useState(false);
+
+    const handleAdminClose = async () => {
+        setIsAdminOpen(false);
+        // Recarregar dados do Supabase para refletir mudanças feitas no admin
+        await refreshData();
+    };
 
     return (
         <div className="min-h-screen pb-12">
@@ -95,7 +101,7 @@ const AppContent: React.FC = () => {
             )}
 
             {isAdminOpen && (
-                <AdminPanel onClose={() => setIsAdminOpen(false)} />
+                <AdminPanel onClose={handleAdminClose} />
             )}
         </div>
     );
