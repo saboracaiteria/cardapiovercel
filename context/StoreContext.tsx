@@ -39,6 +39,8 @@ interface StoreContextType {
     addOrder: (order: Order) => void;
 
     onlineCount: number;
+
+    refreshData: () => Promise<void>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -403,7 +405,8 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             customerInfo, updateCustomerInfo,
             appliedCoupon, applyCoupon, removeCoupon,
             orders, addOrder,
-            onlineCount
+            onlineCount,
+            refreshData: fetchData
         }}>
             {children}
         </StoreContext.Provider>

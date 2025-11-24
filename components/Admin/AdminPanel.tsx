@@ -19,7 +19,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
         orders, settings, updateSettings,
         products, updateProduct, addProduct, removeProduct,
         cupSizes, updateCupSizes,
-        isStoreOpen, isDeliveryAvailable, neighborhoods, updateNeighborhoods
+        isStoreOpen, isDeliveryAvailable, neighborhoods, updateNeighborhoods,
+        refreshData
     } = useStore();
 
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -77,13 +78,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
     }
 
     // --- Handlers ---
-    const handleManualSave = () => {
+    const handleManualSave = async () => {
         setShowSaveToast(true);
-        setTimeout(() => {
-            setShowSaveToast(false);
-            // Recarregar a página para pegar dados atualizados do Supabase
-            window.location.reload();
-        }, 1500);
+        // Aguardar um pouco para garantir que as atualizações foram salvas
+        await new Promise(resolve => setTimeout(resolve, 500));
+        // Recarregar dados do Supabase
+        await refreshData();
+        setTimeout(() => setShowSaveToast(false), 2000);
     };
 
     const handleUpdateNeighborhood = (index: number, field: 'name' | 'fee', value: string) => {
