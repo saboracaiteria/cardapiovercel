@@ -253,15 +253,35 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     };
 
     const updateProduct = async (id: number, updates: Partial<Product>) => {
+        // Atualização otimista
         setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
 
-        const dbUpdates: any = {};
-        if (updates.name) dbUpdates.name = updates.name;
-        if (updates.price !== undefined) dbUpdates.price = updates.price;
-        if (updates.disabled !== undefined) dbUpdates.disabled = updates.disabled;
-        if (updates.description !== undefined) dbUpdates.description = updates.description;
+        try {
+            const dbUpdates: any = {};
+            if (updates.name !== undefined) dbUpdates.name = updates.name;
+            if (updates.price !== undefined) dbUpdates.price = updates.price;
+            if (updates.disabled !== undefined) dbUpdates.disabled = updates.disabled;
+            if (updates.description !== undefined) dbUpdates.description = updates.description;
 
-        await supabase.from('products').update(dbUpdates).eq('id', id);
+            console.log('Atualizando produto:', id, dbUpdates);
+
+            const { data, error } = await supabase
+                .from('products')
+                .update(dbUpdates)
+                .eq('id', id)
+                .select();
+
+            if (error) {
+                console.error('Erro ao atualizar produto:', error);
+                // Reverter atualização otimista em caso de erro
+                await fetchData();
+            } else {
+                console.log('Produto atualizado com sucesso:', data);
+            }
+        } catch (error) {
+            console.error('Erro ao atualizar produto:', error);
+            await fetchData();
+        }
     };
 
     const addProduct = async (product: Product) => {
@@ -291,38 +311,28 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     };
 
     const updateCupSizes = async (sizes: CupSize[]) => {
+        // Atualização otimista
         setCupSizes(sizes);
-        // For simplicity, we might just delete all and re-insert or update individually.
-        // Since it's a small list, upsert is fine if we had IDs. 
-        // But here `sizes` might not have IDs if they are new? 
-        // The current app structure treats `cupSizes` as a simple array in constants.
-        // Let's assume we update them one by one or just replace.
-        // Strategy: Upsert all.
 
-        // Actually, the UI passes the whole array.
-        // Let's just loop and upsert.
-        for (const size of sizes) {
-            // We need an ID to update, or unique name.
-            // If the UI doesn't track IDs for cup sizes, we might have an issue.
-            // Let's fetch IDs first or assume name is unique?
-            // For now, let's just update based on name if possible or assume the user is editing existing ones.
-            // A better approach for this refactor:
-            // 1. Delete all cup sizes (risky?)
-            // 2. Insert all new ones.
-            // OR: Just update the ones that changed.
+        try {
+            console.log('Atualizando tamanhos de copos:', sizes);
 
-            // Given the complexity, let's just try to update by name or ID if we had it.
-            // But `CupSize` interface in types.ts doesn't have ID.
-            // We should probably add ID to CupSize interface.
-            // For now, I will just log a warning or try to match by name.
-        }
-        // *Correction*: To do this properly, we should update `CupSize` type to have `id`.
-        // But to avoid breaking changes, let's just re-fetch after update?
-        // Actually, let's just wipe and recreate for now (simplest for "settings" style lists)
-        // or just update the `price` where `name` matches.
+            for (const size of sizes) {
+                const { data, error } = await supabase
+                    .from('cup_sizes')
+                    .update({ price: size.price })
+                    .eq('name', size.name)
+                    .select();
 
-        for (const size of sizes) {
-            await supabase.from('cup_sizes').update({ price: size.price }).eq('name', size.name);
+                if (error) {
+                    console.error(`Erro ao atualizar tamanho ${size.name}:`, error);
+                } else {
+                    console.log(`Tamanho ${size.name} atualizado:`, data);
+                }
+            }
+        } catch (error) {
+            console.error('Erro ao atualizar tamanhos:', error);
+            await fetchData();
         }
     };
 
