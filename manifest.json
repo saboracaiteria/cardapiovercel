@@ -1,0 +1,21 @@
+{
+  "name": "Sabor Açaíteria",
+  "short_name": "Sabor Açaí",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/saboracaiteria/SABOR-/main/175.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "https://raw.githubusercontent.com/saboracaiteria/SABOR-/main/175.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
