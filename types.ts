@@ -1,13 +1,16 @@
 
+
 export interface Product {
     id: number;
     name: string;
     price: number;
     disabled: boolean;
-    type: 'base_acai' | 'combo_selectable_size';
+    type: 'base_acai' | 'combo_selectable_size' | 'custom_combo';
     description?: string;
     sizesKey?: string;
     customToppingLimits?: Record<string, number>;
+    customSize?: string; // Para custom_combo: tamanho livre (ex: "400ml", "Grande")
+    includedItems?: string; // Para custom_combo: ingredientes inclusos
 }
 
 export interface ToppingItem {
@@ -78,6 +81,7 @@ export interface AdminSettings {
     dailyHours: DailyHours[];
     weekdayDeliveryStartTime: string;
     weekendDeliveryStartTime: string;
+    profilePhotoUrl?: string;
 }
 
 export interface CustomerInfo {

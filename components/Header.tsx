@@ -11,11 +11,11 @@ const Header: React.FC = () => {
             {/* Logo with Gradient Ring */}
             <div className="w-24 h-24 md:w-28 md:h-28 rounded-full flex-shrink-0 p-1 bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600">
                 <div className="bg-gray-900 rounded-full w-full h-full p-0.5 overflow-hidden">
-                     <img 
-                        src="https://raw.githubusercontent.com/saboracaiteria/SABOR-/main/175.jpg" 
-                        alt="Sabor Açaíteria" 
+                    <img
+                        src={settings.profilePhotoUrl || "https://raw.githubusercontent.com/saboracaiteria/SABOR-/main/175.jpg"}
+                        alt="Sabor Açaíteria"
                         className="w-full h-full rounded-full object-cover"
-                     />
+                    />
                 </div>
             </div>
 
@@ -24,19 +24,19 @@ const Header: React.FC = () => {
                 <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-100">
                     Sabor Açaíteria
                 </h1>
-                
+
                 <div className="flex flex-col md:flex-row items-center gap-2 mt-2 text-sm text-gray-400 justify-center md:justify-start">
-                     <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1">
                         <span className={`w-2 h-2 rounded-full ${isStoreOpen ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
                         <span className="font-medium">{isStoreOpen ? 'Aberto Agora' : 'Fechado'}</span>
-                     </div>
-                     <span className="hidden md:inline">•</span>
-                     <div className="flex items-center gap-1">
+                    </div>
+                    <span className="hidden md:inline">•</span>
+                    <div className="flex items-center gap-1">
                         <MapPin size={14} />
                         <span>Canaã dos Carajás</span>
-                     </div>
+                    </div>
                 </div>
-                
+
                 {/* Stats */}
                 <div className="mt-4 flex justify-center md:justify-start gap-6 text-center">
                     <div>
@@ -56,12 +56,12 @@ const Header: React.FC = () => {
                 {/* Actions */}
                 <div className="mt-6 flex gap-3 justify-center md:justify-start relative">
                     <div className="absolute -left-10 top-1/2 -translate-y-1/2 text-green-400 animate-bounce hidden md:block">
-                         <ArrowRight size={24} />
+                        <ArrowRight size={24} />
                     </div>
-                    
-                    <a 
-                        href="https://www.instagram.com/sabor_acaiteria/profilecard/?igsh=NjF2ZWMwNHNiNzI0" 
-                        target="_blank" 
+
+                    <a
+                        href="https://www.instagram.com/sabor_acaiteria/profilecard/?igsh=NjF2ZWMwNHNiNzI0"
+                        target="_blank"
                         rel="noreferrer"
                         className="flex-1 md:flex-none"
                     >
@@ -69,14 +69,14 @@ const Header: React.FC = () => {
                             <Instagram size={16} /> Seguir
                         </Button>
                     </a>
-                    
-                    <a 
-                        href={`https://wa.me/${settings.whatsappNumber}`} 
-                        target="_blank" 
+
+                    <a
+                        href={`https://wa.me/${settings.whatsappNumber}`}
+                        target="_blank"
                         rel="noreferrer"
                         className="flex-1 md:flex-none"
                     >
-                         <Button className="w-full md:w-auto text-sm py-2 px-4 h-10">
+                        <Button className="w-full md:w-auto text-sm py-2 px-4 h-10">
                             <MessageCircle size={16} /> Mensagem
                         </Button>
                     </a>

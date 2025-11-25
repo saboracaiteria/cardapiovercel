@@ -3,8 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { formatCurrency } from '../../utils/storeTime';
 import { Order } from '../../types';
-import { X, LayoutDashboard, Coffee, Settings, History, TrendingUp, DollarSign, Calendar, CreditCard, Lock, Bike, Trash2, Plus, Edit2, Save, CheckCircle, Clock } from 'lucide-react';
+import { X, LayoutDashboard, Coffee, Settings, History, TrendingUp, DollarSign, Calendar, CreditCard, Lock, Bike, Trash2, Plus, Edit2, Save, CheckCircle, Clock, Upload, Image as ImageIcon } from 'lucide-react';
 import Button from '../ui/Button';
+import { supabase } from '../../utils/supabase';
 
 interface AdminPanelProps {
     onClose: () => void;
@@ -35,10 +36,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
 
     // State for new product
     const [isAddingProduct, setIsAddingProduct] = useState(false);
-    const [newProdType, setNewProdType] = useState<'base_acai' | 'combo_selectable_size'>('combo_selectable_size');
+    const [newProdType, setNewProdType] = useState<'base_acai' | 'combo_selectable_size' | 'custom_combo'>('combo_selectable_size');
     const [newProdName, setNewProdName] = useState('');
     const [newProdDesc, setNewProdDesc] = useState('');
     const [newProdPrice, setNewProdPrice] = useState('');
+    const [newProdCustomSize, setNewProdCustomSize] = useState(''); // Para custom_combo
+    const [newProdIncludedItems, setNewProdIncludedItems] = useState(''); // Para custom_combo
+
+    // State for profile photo upload
+    const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
 
     // --- Auth ---
     const handleLogin = (e: React.FormEvent) => {
@@ -126,22 +133,92 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
         if (!newProdName) return;
         const price = parseFloat(newProdPrice) || 0;
 
-        const newProduct = {
+        const newProduct: any = {
             id: Date.now(),
             name: newProdName,
             type: newProdType,
-            price: newProdType === 'base_acai' ? price : 0,
+            price: (newProdType === 'base_acai' || newProdType === 'custom_combo') ? price : 0,
             description: newProdDesc,
             disabled: false,
             sizesKey: newProdType === 'combo_selectable_size' ? 'cupSizes' : undefined
         };
 
-        addProduct(newProduct as any);
+        // Adicionar campos específicos do custom_combo
+        if (newProdType === 'custom_combo') {
+            newProduct.customSize = newProdCustomSize;
+            newProduct.includedItems = newProdIncludedItems;
+        }
+
+        addProduct(newProduct);
         setIsAddingProduct(false);
         setNewProdName('');
         setNewProdDesc('');
         setNewProdPrice('');
+        setNewProdCustomSize('');
+        setNewProdIncludedItems('');
         handleManualSave();
+    };
+
+    const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            alert('Por favor, selecione um arquivo de imagem.');
+            return;
+        }
+
+        // Validate file size (max 2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Tamanho máximo: 2MB');
+            return;
+        }
+
+        try {
+            setIsUploadingPhoto(true);
+            setUploadProgress(0);
+
+            // Generate unique filename
+            const fileExt = file.name.split('.').pop();
+            const fileName = `profile-${Date.now()}.${fileExt}`;
+
+            // Upload to Supabase Storage
+            const { data, error: uploadError } = await supabase.storage
+                .from('profile-photos')
+                .upload(fileName, file, {
+                    cacheControl: '3600',
+                    upsert: false
+                });
+
+            if (uploadError) {
+                console.error('Erro ao fazer upload:', uploadError);
+                alert('Erro ao fazer upload da foto. Verifique se o bucket "profile-photos" existe no Supabase.');
+                return;
+            }
+
+            setUploadProgress(50);
+
+            // Get public URL
+            const { data: urlData } = supabase.storage
+                .from('profile-photos')
+                .getPublicUrl(fileName);
+
+            if (urlData?.publicUrl) {
+                setUploadProgress(75);
+                // Update settings with new photo URL
+                await updateSettings({ profilePhotoUrl: urlData.publicUrl });
+                setUploadProgress(100);
+                await handleManualSave();
+            }
+
+        } catch (error) {
+            console.error('Erro ao processar upload:', error);
+            alert('Erro ao processar upload da foto.');
+        } finally {
+            setIsUploadingPhoto(false);
+            setUploadProgress(0);
+        }
     };
 
     const handleDeleteProduct = (id: number) => {
@@ -347,6 +424,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                             >
                                                 <option value="combo_selectable_size">Combo / Copo Pronto (Segue Tabela de Preços)</option>
                                                 <option value="base_acai">Açaí Puro (Preço Fixo)</option>
+                                                <option value="custom_combo">Combo Customizado (Preço & Tamanho Fixos)</option>
                                             </select>
                                         </div>
                                         <div>
@@ -370,9 +448,36 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                             placeholder="Ingredientes..."
                                         />
                                     </div>
-                                    {newProdType === 'base_acai' && (
+
+                                    {/* Campos Específicos para Custom Combo */}
+                                    {newProdType === 'custom_combo' && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                            <div>
+                                                <label className="text-xs text-gray-400 block mb-1">Tamanho (Ex: 500ml)</label>
+                                                <input
+                                                    type="text"
+                                                    value={newProdCustomSize}
+                                                    onChange={(e) => setNewProdCustomSize(e.target.value)}
+                                                    className="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white"
+                                                    placeholder="Ex: 500ml"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs text-gray-400 block mb-1">Itens Inclusos (Separados por vírgula)</label>
+                                                <input
+                                                    type="text"
+                                                    value={newProdIncludedItems}
+                                                    onChange={(e) => setNewProdIncludedItems(e.target.value)}
+                                                    className="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white"
+                                                    placeholder="Ex: Leite em pó, Leite condensado"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {(newProdType === 'base_acai' || newProdType === 'custom_combo') && (
                                         <div className="mb-4">
-                                            <label className="text-xs text-gray-400 block mb-1">Preço Base (R$)</label>
+                                            <label className="text-xs text-gray-400 block mb-1">Preço (R$)</label>
                                             <input
                                                 type="number"
                                                 value={newProdPrice}
@@ -700,6 +805,60 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                         onChange={(e) => updateSettings({ address: e.target.value })}
                                         className="w-full bg-gray-900 border border-gray-600 rounded-lg p-2 text-white"
                                     />
+                                </div>
+                            </div>
+
+                            {/* Profile Photo Upload */}
+                            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 space-y-4">
+                                <h4 className="font-bold text-white border-b border-gray-700 pb-2 flex items-center gap-2">
+                                    <ImageIcon size={18} className="text-pink-500" />
+                                    Foto de Perfil
+                                </h4>
+
+                                <div className="flex flex-col md:flex-row gap-4 items-center">
+                                    {/* Current Photo Preview */}
+                                    <div className="w-32 h-32 rounded-full flex-shrink-0 p-1 bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600">
+                                        <div className="bg-gray-900 rounded-full w-full h-full p-0.5 overflow-hidden">
+                                            <img
+                                                src={settings.profilePhotoUrl || "https://raw.githubusercontent.com/saboracaiteria/SABOR-/main/175.jpg"}
+                                                alt="Preview"
+                                                className="w-full h-full rounded-full object-cover"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Upload Controls */}
+                                    <div className="flex-1 space-y-3">
+                                        <p className="text-sm text-gray-400">
+                                            Escolha uma nova foto de perfil. Formatos aceitos: JPG, PNG, WEBP (máx 2MB)
+                                        </p>
+
+                                        {isUploadingPhoto && (
+                                            <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+                                                <div
+                                                    className="bg-pink-500 h-full transition-all duration-300"
+                                                    style={{ width: `${uploadProgress}%` }}
+                                                />
+                                            </div>
+                                        )}
+
+                                        <label className="cursor-pointer">
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={handlePhotoUpload}
+                                                disabled={isUploadingPhoto}
+                                                className="hidden"
+                                            />
+                                            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${isUploadingPhoto
+                                                    ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                                    : 'bg-pink-600 text-white hover:bg-pink-700'
+                                                }`}>
+                                                <Upload size={16} />
+                                                {isUploadingPhoto ? 'Enviando...' : 'Escolher Foto'}
+                                            </div>
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
 

@@ -86,7 +86,8 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                     openDays: settingsData.open_days || [],
                     dailyHours: settingsData.daily_hours || [],
                     weekdayDeliveryStartTime: settingsData.weekday_delivery_start_time,
-                    weekendDeliveryStartTime: settingsData.weekend_delivery_start_time
+                    weekendDeliveryStartTime: settingsData.weekend_delivery_start_time,
+                    profilePhotoUrl: settingsData.profile_photo_url || 'https://raw.githubusercontent.com/saboracaiteria/SABOR-/main/175.jpg'
                 });
             } else {
                 // Initialize settings if empty
@@ -114,7 +115,9 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                     type: p.type as any,
                     description: p.description,
                     sizesKey: p.sizes_key,
-                    customToppingLimits: p.custom_topping_limits
+                    customToppingLimits: p.custom_topping_limits,
+                    customSize: p.custom_size,
+                    includedItems: p.included_items
                 })));
             }
 
@@ -250,6 +253,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         if (newSettings.dailyHours) dbUpdates.daily_hours = newSettings.dailyHours;
         if (newSettings.weekdayDeliveryStartTime) dbUpdates.weekday_delivery_start_time = newSettings.weekdayDeliveryStartTime;
         if (newSettings.weekendDeliveryStartTime) dbUpdates.weekend_delivery_start_time = newSettings.weekendDeliveryStartTime;
+        if (newSettings.profilePhotoUrl !== undefined) dbUpdates.profile_photo_url = newSettings.profilePhotoUrl;
 
         await supabase.from('settings').update(dbUpdates).eq('id', 1);
     };
@@ -300,7 +304,9 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 type: product.type,
                 description: product.description,
                 sizes_key: product.sizesKey,
-                custom_topping_limits: product.customToppingLimits
+                custom_topping_limits: product.customToppingLimits,
+                custom_size: product.customSize,
+                included_items: product.includedItems
             };
 
             const { data, error } = await supabase
