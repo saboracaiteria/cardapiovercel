@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { formatCurrency } from '../../utils/storeTime';
 import { Order } from '../../types';
-import { X, LayoutDashboard, Coffee, Settings, History, TrendingUp, DollarSign, Calendar, CreditCard, Lock, Bike, Trash2, Plus, Edit2, Save, CheckCircle, Clock, Upload, Image as ImageIcon } from 'lucide-react';
+import { X, LayoutDashboard, Coffee, Settings, History, TrendingUp, DollarSign, Calendar, CreditCard, Lock, Bike, Trash2, Plus, Edit2, Save, CheckCircle, Clock, Upload, Image as ImageIcon, ChevronDown, ChevronUp, Package } from 'lucide-react';
 import Button from '../ui/Button';
 import { supabase } from '../../utils/supabase';
 
@@ -46,6 +46,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
     // State for profile photo upload
     const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
+
+    // State for expandable orders
+    const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
 
     // --- Auth ---
     const handleLogin = (e: React.FormEvent) => {
@@ -219,6 +222,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
             setIsUploadingPhoto(false);
             setUploadProgress(0);
         }
+    };
+
+    const toggleOrderExpand = (orderId: string) => {
+        setExpandedOrders(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(orderId)) {
+                newSet.delete(orderId);
+            } else {
+                newSet.add(orderId);
+            }
+            return newSet;
+        });
     };
 
     const handleDeleteProduct = (id: number) => {
@@ -851,8 +866,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                                 className="hidden"
                                             />
                                             <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${isUploadingPhoto
-                                                    ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                                                    : 'bg-pink-600 text-white hover:bg-pink-700'
+                                                ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                                : 'bg-pink-600 text-white hover:bg-pink-700'
                                                 }`}>
                                                 <Upload size={16} />
                                                 {isUploadingPhoto ? 'Enviando...' : 'Escolher Foto'}
@@ -885,22 +900,106 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-700">
-                                            {orders.map(order => (
-                                                <tr key={order.id} className="hover:bg-gray-750">
-                                                    <td className="p-4">
-                                                        <div className="font-bold text-white">{new Date(order.date).toLocaleDateString()}</div>
-                                                        <div className="text-xs">{new Date(order.date).toLocaleTimeString()}</div>
-                                                    </td>
-                                                    <td className="p-4 text-white">{order.customer.name}</td>
-                                                    <td className="p-4">
-                                                        <span className={`px-2 py-1 rounded text-xs font-bold ${order.customer.deliveryOption === 'delivery' ? 'bg-blue-900 text-blue-200' : 'bg-orange-900 text-orange-200'}`}>
-                                                            {order.customer.deliveryOption === 'delivery' ? 'Delivery' : 'Retirada'}
-                                                        </span>
-                                                    </td>
-                                                    <td className="p-4">{order.customer.paymentMethod}</td>
-                                                    <td className="p-4 text-right font-bold text-white">{formatCurrency(order.total)}</td>
-                                                </tr>
-                                            ))}
+                                            {orders.map(order => {
+                                                const isExpanded = expandedOrders.has(order.id);
+                                                return (
+                                                    <React.Fragment key={order.id}>
+                                                        <tr
+                                                            className="hover:bg-gray-750 cursor-pointer transition-colors"
+                                                            onClick={() => toggleOrderExpand(order.id)}
+                                                        >
+                                                            <td className="p-4">
+                                                                <div className="flex items-center gap-2">
+                                                                    {isExpanded ? <ChevronUp size={16} className="text-pink-500" /> : <ChevronDown size={16} className="text-gray-500" />}
+                                                                    <div>
+                                                                        <div className="font-bold text-white">{new Date(order.date).toLocaleDateString()}</div>
+                                                                        <div className="text-xs">{new Date(order.date).toLocaleTimeString()}</div>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                            <td className="p-4 text-white">{order.customer.name}</td>
+                                                            <td className="p-4">
+                                                                <span className={`px-2 py-1 rounded text-xs font-bold ${order.customer.deliveryOption === 'delivery' ? 'bg-blue-900 text-blue-200' : 'bg-orange-900 text-orange-200'}`}>
+                                                                    {order.customer.deliveryOption === 'delivery' ? 'Delivery' : 'Retirada'}
+                                                                </span>
+                                                            </td>
+                                                            <td className="p-4">{order.customer.paymentMethod}</td>
+                                                            <td className="p-4 text-right font-bold text-white">{formatCurrency(order.total)}</td>
+                                                        </tr>
+                                                        {isExpanded && (
+                                                            <tr className="bg-gray-900/50">
+                                                                <td colSpan={5} className="p-0">
+                                                                    <div className="p-6 space-y-4">
+                                                                        <div className="flex items-center gap-2 text-pink-400 font-bold text-sm">
+                                                                            <Package size={16} />
+                                                                            <span>Itens do Pedido</span>
+                                                                        </div>
+                                                                        <div className="space-y-3">
+                                                                            {order.items.map((item, idx) => (
+                                                                                <div key={idx} className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                                                                                    <div className="flex justify-between items-start mb-2">
+                                                                                        <div className="flex-1">
+                                                                                            <div className="font-bold text-white">
+                                                                                                {item.quantity}x {item.name}
+                                                                                                {item.selectedSize && <span className="text-gray-400 font-normal"> ({item.selectedSize})</span>}
+                                                                                            </div>
+                                                                                            {item.description && (
+                                                                                                <div className="text-xs text-gray-500 mt-1">{item.description}</div>
+                                                                                            )}
+                                                                                            {item.toppings && item.toppings.length > 0 && (
+                                                                                                <div className="mt-2 space-y-1">
+                                                                                                    {item.toppings.map((topping, tIdx) => (
+                                                                                                        <div key={tIdx} className="text-xs text-gray-400 flex justify-between">
+                                                                                                            <span>+ {topping.name}</span>
+                                                                                                            {topping.price > 0 && <span>{formatCurrency(topping.price)}</span>}
+                                                                                                        </div>
+                                                                                                    ))}
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </div>
+                                                                                        <div className="text-right ml-4">
+                                                                                            <div className="text-sm text-gray-400">Unit: {formatCurrency(item.basePrice)}</div>
+                                                                                            <div className="font-bold text-white">{formatCurrency(item.price * item.quantity)}</div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                        <div className="border-t border-gray-700 pt-4 space-y-2">
+                                                                            <div className="flex justify-between text-sm">
+                                                                                <span className="text-gray-400">Subtotal</span>
+                                                                                <span className="text-white">{formatCurrency(order.subtotal)}</span>
+                                                                            </div>
+                                                                            {order.discount > 0 && (
+                                                                                <div className="flex justify-between text-sm">
+                                                                                    <span className="text-gray-400">Desconto</span>
+                                                                                    <span className="text-green-400">-{formatCurrency(order.discount)}</span>
+                                                                                </div>
+                                                                            )}
+                                                                            {order.deliveryFee > 0 && (
+                                                                                <div className="flex justify-between text-sm">
+                                                                                    <span className="text-gray-400">Taxa de Entrega</span>
+                                                                                    <span className="text-white">{formatCurrency(order.deliveryFee)}</span>
+                                                                                </div>
+                                                                            )}
+                                                                            <div className="flex justify-between font-bold text-base border-t border-gray-700 pt-2">
+                                                                                <span className="text-white">Total</span>
+                                                                                <span className="text-pink-400">{formatCurrency(order.total)}</span>
+                                                                            </div>
+                                                                            {order.customer.observations && (
+                                                                                <div className="mt-4 p-3 bg-gray-800 rounded border border-gray-700">
+                                                                                    <div className="text-xs text-gray-400 mb-1">Observações:</div>
+                                                                                    <div className="text-sm text-white">{order.customer.observations}</div>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                    </React.Fragment>
+                                                );
+                                            })}
                                             {orders.length === 0 && (
                                                 <tr><td colSpan={5} className="p-8 text-center">Nenhum registro encontrado.</td></tr>
                                             )}
