@@ -299,6 +299,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
 
     const baseProducts = products.filter(p => p.type === 'base_acai');
     const comboProducts = products.filter(p => p.type === 'combo_selectable_size');
+    const customComboProducts = products.filter(p => p.type === 'custom_combo');
 
     return (
         <div className="fixed inset-0 z-50 bg-gray-950 flex flex-col">
@@ -632,6 +633,87 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                     ))}
                                 </div>
                             </div>
+
+                            {/* 4. Custom Combo Products */}
+                            {customComboProducts.length > 0 && (
+                                <div className="space-y-4">
+                                    <h4 className="font-bold text-gray-300 border-l-4 border-purple-500 pl-3">Combos Customizados (Preço & Tamanho Fixos)</h4>
+                                    <div className="grid grid-cols-1 gap-4">
+                                        {customComboProducts.map(product => (
+                                            <div key={product.id} className="bg-gray-800 border border-gray-700 rounded-xl p-4 relative group">
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <div className="flex-1">
+                                                        <input
+                                                            type="text"
+                                                            value={product.name}
+                                                            onChange={(e) => updateProduct(product.id, { name: e.target.value })}
+                                                            className="bg-transparent text-base font-bold text-white border-b border-transparent focus:border-pink-500 outline-none w-full"
+                                                        />
+                                                    </div>
+                                                    <div className="flex gap-3 ml-4">
+                                                        <label className="flex items-center cursor-pointer relative">
+                                                            <input
+                                                                type="checkbox"
+                                                                className="sr-only peer"
+                                                                checked={!product.disabled}
+                                                                onChange={() => updateProduct(product.id, { disabled: !product.disabled })}
+                                                            />
+                                                            <div className="w-9 h-5 bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600"></div>
+                                                        </label>
+                                                        <button onClick={() => handleDeleteProduct(product.id)} className="text-red-500 hover:text-red-300"><Trash2 size={18} /></button>
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-3">
+                                                    <div>
+                                                        <label className="text-[10px] text-gray-500 uppercase font-bold">Descrição</label>
+                                                        <input
+                                                            type="text"
+                                                            value={product.description || ''}
+                                                            onChange={(e) => updateProduct(product.id, { description: e.target.value })}
+                                                            className="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-gray-300 text-sm focus:border-pink-500 outline-none"
+                                                        />
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <div>
+                                                            <label className="text-[10px] text-gray-500 uppercase font-bold">Tamanho</label>
+                                                            <input
+                                                                type="text"
+                                                                value={product.customSize || ''}
+                                                                onChange={(e) => updateProduct(product.id, { customSize: e.target.value })}
+                                                                className="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-gray-300 text-sm focus:border-pink-500 outline-none"
+                                                                placeholder="Ex: 500ml"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-[10px] text-gray-500 uppercase font-bold">Preço Fixo</label>
+                                                            <div className="flex items-center gap-2 bg-gray-900 p-2 rounded-lg">
+                                                                <span className="text-xs text-gray-500">R$</span>
+                                                                <input
+                                                                    type="number"
+                                                                    step="0.50"
+                                                                    value={product.price}
+                                                                    onChange={(e) => updateProduct(product.id, { price: parseFloat(e.target.value) })}
+                                                                    className="flex-1 bg-transparent border-none text-white font-bold outline-none"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] text-gray-500 uppercase font-bold">Itens Inclusos (separados por vírgula)</label>
+                                                        <input
+                                                            type="text"
+                                                            value={product.includedItems || ''}
+                                                            onChange={(e) => updateProduct(product.id, { includedItems: e.target.value })}
+                                                            className="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-gray-300 text-sm focus:border-pink-500 outline-none"
+                                                            placeholder="Ex: Leite em pó, Leite condensado, Granola"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 

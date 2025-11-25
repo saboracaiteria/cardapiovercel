@@ -37,10 +37,12 @@ export interface CartItem {
     price: number;
     basePrice: number;
     quantity: number;
-    type: 'base_acai' | 'combo_selectable_size';
+    type: 'base_acai' | 'combo_selectable_size' | 'custom_combo';
     selectedSize?: string;
     description?: string;
     toppings: { name: string; price: number }[];
+    customSize?: string; // Para custom_combo
+    includedItems?: string; // Para custom_combo
 }
 
 export interface Coupon {

@@ -3,18 +3,25 @@ import { Product, CartItem } from '../types';
 import { formatCurrency } from '../utils/storeTime';
 import ItemModal from './Modals/ItemModal';
 import ComboModal from './Modals/ComboModal';
+import CustomComboModal from './Modals/CustomComboModal';
 import { useStore } from '../context/StoreContext';
 import { ArrowRight } from 'lucide-react';
 
 const ProductList: React.FC = () => {
     const { addToCart, products, cupSizes } = useStore();
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-    const [modalType, setModalType] = useState<'item' | 'combo' | null>(null);
+    const [modalType, setModalType] = useState<'item' | 'combo' | 'custom_combo' | null>(null);
 
     const handleProductClick = (product: Product) => {
         if (product.disabled) return;
         setSelectedProduct(product);
-        setModalType(product.type === 'base_acai' ? 'item' : 'combo');
+        if (product.type === 'base_acai') {
+            setModalType('item');
+        } else if (product.type === 'custom_combo') {
+            setModalType('custom_combo');
+        } else {
+            setModalType('combo');
+        }
     };
 
     const handleCloseModal = () => {
@@ -98,6 +105,13 @@ const ProductList: React.FC = () => {
             )}
             {modalType === 'combo' && (
                 <ComboModal
+                    product={selectedProduct}
+                    onClose={handleCloseModal}
+                    onAddToCart={handleAddToCart}
+                />
+            )}
+            {modalType === 'custom_combo' && (
+                <CustomComboModal
                     product={selectedProduct}
                     onClose={handleCloseModal}
                     onAddToCart={handleAddToCart}

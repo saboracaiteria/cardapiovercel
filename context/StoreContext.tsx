@@ -268,6 +268,8 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             if (updates.price !== undefined) dbUpdates.price = updates.price;
             if (updates.disabled !== undefined) dbUpdates.disabled = updates.disabled;
             if (updates.description !== undefined) dbUpdates.description = updates.description;
+            if (updates.customSize !== undefined) dbUpdates.custom_size = updates.customSize;
+            if (updates.includedItems !== undefined) dbUpdates.included_items = updates.includedItems;
 
             console.log('Atualizando produto:', id, dbUpdates);
 
