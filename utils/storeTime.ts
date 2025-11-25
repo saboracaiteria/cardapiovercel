@@ -12,11 +12,16 @@ export const getStoreStatus = (settings: AdminSettings) => {
     if (settings.storeStatus === 'open') return { isOpen: true, isDeliveryAvailable: true };
     if (settings.storeStatus === 'closed') return { isOpen: false, isDeliveryAvailable: false };
 
+    // Check if today is an open day
+    if (!settings.openDays.includes(currentDay)) {
+        return { isOpen: false, isDeliveryAvailable: false };
+    }
+
     if (!todayHours) return { isOpen: false, isDeliveryAvailable: false };
 
     const [openH, openM] = todayHours.open.split(':').map(Number);
     const [closeH, closeM] = todayHours.close.split(':').map(Number);
-    
+
     const openTime = openH * 60 + openM;
     const closeTime = closeH * 60 + closeM;
     const currentTime = now.getHours() * 60 + now.getMinutes();
@@ -24,12 +29,12 @@ export const getStoreStatus = (settings: AdminSettings) => {
     const isOpen = currentTime >= openTime && currentTime <= closeTime;
 
     // Delivery logic
-    const deliveryStartStr = (currentDay === 0 || currentDay === 6) 
-        ? settings.weekendDeliveryStartTime 
+    const deliveryStartStr = (currentDay === 0 || currentDay === 6)
+        ? settings.weekendDeliveryStartTime
         : settings.weekdayDeliveryStartTime;
     const [delH, delM] = deliveryStartStr.split(':').map(Number);
     const deliveryStartTime = delH * 60 + delM;
-    
+
     const isDeliveryAvailable = isOpen && currentTime >= deliveryStartTime;
 
     return { isOpen, isDeliveryAvailable };
@@ -37,7 +42,7 @@ export const getStoreStatus = (settings: AdminSettings) => {
 
 export const getNextOpeningDate = (settings: AdminSettings): Date | null => {
     const now = new Date();
-    
+
     // Check later today
     const todayHours = settings.dailyHours[now.getDay()];
     if (todayHours) {
@@ -52,7 +57,7 @@ export const getNextOpeningDate = (settings: AdminSettings): Date | null => {
         const nextDate = new Date(now);
         nextDate.setDate(now.getDate() + i);
         const dayOfWeek = nextDate.getDay();
-        
+
         if (settings.openDays.includes(dayOfWeek)) {
             const dayHours = settings.dailyHours[dayOfWeek];
             if (dayHours) {

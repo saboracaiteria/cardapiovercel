@@ -6,103 +6,49 @@ import { Clock, Bike } from 'lucide-react';
 const StatusBanners: React.FC = () => {
     const { isStoreOpen, isDeliveryAvailable, settings } = useStore();
     const [timeLeft, setTimeLeft] = useState<number>(0);
-    const [targetDate, setTargetDate] = useState<Date | null>(null);
-    const [bannerType, setBannerType] = useState<'closing' | 'opening' | 'delivery' | null>(null);
 
     useEffect(() => {
-        try {
+        const updateTimer = () => {
             const now = new Date();
             const currentDay = now.getDay();
             const todayHours = settings.dailyHours?.[currentDay];
 
-            // Check if we have valid hours data
-            if (!todayHours || !todayHours.close || !todayHours.open) {
-                setTargetDate(null);
-                setBannerType(null);
-                return;
-            }
+            if (!todayHours) return;
 
-            let target: Date | null = null;
-            let type: 'closing' | 'opening' | 'delivery' | null = null;
+            let targetTime: Date;
 
             if (isStoreOpen) {
-                // Check closing time
+                // Store is open - count down to closing
                 const [closeH, closeM] = todayHours.close.split(':').map(Number);
-                if (isNaN(closeH) || isNaN(closeM)) {
-                    setTargetDate(null);
-                    setBannerType(null);
-                    return;
-                }
-
-                const closeTime = new Date(now);
-                closeTime.setHours(closeH, closeM, 0, 0);
-
-                // Check delivery start
-                const deliveryStartStr = (currentDay === 0 || currentDay === 6)
-                    ? settings.weekendDeliveryStartTime
-                    : settings.weekdayDeliveryStartTime;
-
-                if (deliveryStartStr) {
-                    const [delH, delM] = deliveryStartStr.split(':').map(Number);
-                    if (!isNaN(delH) && !isNaN(delM)) {
-                        const deliveryTime = new Date(now);
-                        deliveryTime.setHours(delH, delM, 0, 0);
-
-                        if (!isDeliveryAvailable && deliveryTime > now) {
-                            target = deliveryTime;
-                            type = 'delivery';
-                        } else {
-                            target = closeTime;
-                            type = 'closing';
-                        }
-                    } else {
-                        target = closeTime;
-                        type = 'closing';
-                    }
-                } else {
-                    target = closeTime;
-                    type = 'closing';
-                }
+                targetTime = new Date(now);
+                targetTime.setHours(closeH, closeM, 0, 0);
             } else {
-                // Store closed, check opening
-                target = getNextOpeningDate(settings);
-                type = 'opening';
+                // Store is closed - count down to opening
+                const nextOpening = getNextOpeningDate(settings);
+                if (!nextOpening) return;
+                targetTime = nextOpening;
             }
 
-            setTargetDate(target);
-            setBannerType(type);
-        } catch (error) {
-            console.error('Error in StatusBanners:', error);
-            setTargetDate(null);
-            setBannerType(null);
-        }
+            const diff = targetTime.getTime() - now.getTime();
+            setTimeLeft(diff);
+        };
+
+        // Update immediately and then every second
+        updateTimer();
+        const interval = setInterval(updateTimer, 1000);
+        return () => clearInterval(interval);
     }, [isStoreOpen, isDeliveryAvailable, settings]);
 
-    useEffect(() => {
-        if (!targetDate) return;
-        const interval = setInterval(() => {
-            const now = new Date();
-            const diff = targetDate.getTime() - now.getTime();
-            setTimeLeft(diff);
-        }, 1000);
-        return () => clearInterval(interval);
-    }, [targetDate]);
-
-    if (!bannerType || timeLeft <= 0) return null;
-
-    const formattedTime = formatTimeRemaining(timeLeft);
+    const formattedTime = formatTimeRemaining(Math.max(0, timeLeft));
 
     return (
         <>
             {/* Sticky Timer Top Left */}
-            <div className={`fixed top-4 left-4 z-40 bg-gray-900/90 backdrop-blur border border-gray-700 rounded-full px-4 py-1.5 shadow-xl flex items-center gap-2 text-xs font-medium ${bannerType === 'closing' ? 'text-red-400' :
-                    bannerType === 'opening' ? 'text-green-400' : 'text-blue-400'
+            <div className={`fixed top-20 left-4 z-40 bg-gray-900/90 backdrop-blur border border-gray-700 rounded-full px-4 py-1.5 shadow-xl flex items-center gap-2 text-xs font-medium ${isStoreOpen ? 'text-red-400' : 'text-green-400'
                 }`}>
-                {bannerType === 'delivery' ? <Bike size={14} /> : <Clock size={14} />}
+                <Clock size={14} />
                 <span className="text-gray-200">
-                    {bannerType === 'closing' && 'Fecha em: '}
-                    {bannerType === 'opening' && 'Abre em: '}
-                    {bannerType === 'delivery' && 'Delivery em: '}
+                    {isStoreOpen ? 'Fecha em: ' : 'Abre em: '}
                     <span className="font-bold tracking-wider">{formattedTime}</span>
                 </span>
             </div>
