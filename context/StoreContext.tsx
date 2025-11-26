@@ -243,19 +243,47 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         // Optimistic update
         setSettingsState(prev => ({ ...prev, ...newSettings }));
 
-        // Map to DB columns
-        const dbUpdates: any = {};
-        if (newSettings.storeStatus) dbUpdates.store_status = newSettings.storeStatus;
-        if (newSettings.deliveryMode) dbUpdates.delivery_mode = newSettings.deliveryMode;
-        if (newSettings.whatsappNumber) dbUpdates.whatsapp_number = newSettings.whatsappNumber;
-        if (newSettings.address) dbUpdates.address = newSettings.address;
-        if (newSettings.openDays) dbUpdates.open_days = newSettings.openDays;
-        if (newSettings.dailyHours) dbUpdates.daily_hours = newSettings.dailyHours;
-        if (newSettings.weekdayDeliveryStartTime) dbUpdates.weekday_delivery_start_time = newSettings.weekdayDeliveryStartTime;
-        if (newSettings.weekendDeliveryStartTime) dbUpdates.weekend_delivery_start_time = newSettings.weekendDeliveryStartTime;
-        if (newSettings.profilePhotoUrl !== undefined) dbUpdates.profile_photo_url = newSettings.profilePhotoUrl;
+        try {
+            // Map to DB columns
+            const dbUpdates: any = {};
+            if (newSettings.storeStatus) dbUpdates.store_status = newSettings.storeStatus;
+            if (newSettings.deliveryMode) dbUpdates.delivery_mode = newSettings.deliveryMode;
+            if (newSettings.whatsappNumber !== undefined) dbUpdates.whatsapp_number = newSettings.whatsappNumber;
+            if (newSettings.address !== undefined) dbUpdates.address = newSettings.address;
+            if (newSettings.openDays !== undefined) dbUpdates.open_days = newSettings.openDays;
+            if (newSettings.dailyHours !== undefined) dbUpdates.daily_hours = newSettings.dailyHours;
+            if (newSettings.weekdayDeliveryStartTime !== undefined) dbUpdates.weekday_delivery_start_time = newSettings.weekdayDeliveryStartTime;
+            if (newSettings.weekendDeliveryStartTime !== undefined) dbUpdates.weekend_delivery_start_time = newSettings.weekendDeliveryStartTime;
+            if (newSettings.profilePhotoUrl !== undefined) dbUpdates.profile_photo_url = newSettings.profilePhotoUrl;
 
-        await supabase.from('settings').update(dbUpdates).eq('id', 1);
+            // Avoid making empty updates
+            if (Object.keys(dbUpdates).length === 0) {
+                console.warn('updateSettings chamado sem mudanças');
+                return;
+            }
+
+            console.log('Atualizando settings:', dbUpdates);
+
+            const { data, error } = await supabase
+                .from('settings')
+                .update(dbUpdates)
+                .eq('id', 1)
+                .select();
+
+            if (error) {
+                console.error('Erro ao atualizar configurações:', error);
+                // Reverter atualização otimista
+                await fetchData();
+                throw error;
+            } else {
+                console.log('Configurações atualizadas com sucesso:', data);
+            }
+        } catch (error) {
+            console.error('Erro crítico ao atualizar configurações:', error);
+            // Reverter em caso de erro
+            await fetchData();
+            // Não lançar o erro para não quebrar a UI
+        }
     };
 
     const updateProduct = async (id: number, updates: Partial<Product>) => {

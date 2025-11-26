@@ -244,23 +244,40 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
 
     // Schedule Handlers
     const handleDayToggle = (dayIndex: number) => {
-        let newOpenDays = [...settings.openDays];
-        if (newOpenDays.includes(dayIndex)) {
-            newOpenDays = newOpenDays.filter(d => d !== dayIndex);
-        } else {
-            newOpenDays.push(dayIndex);
+        try {
+            let newOpenDays = [...settings.openDays];
+            if (newOpenDays.includes(dayIndex)) {
+                newOpenDays = newOpenDays.filter(d => d !== dayIndex);
+            } else {
+                newOpenDays.push(dayIndex);
+            }
+            updateSettings({ openDays: newOpenDays });
+        } catch (error) {
+            console.error('Erro ao alternar dia:', error);
+            alert('Erro ao alterar dia de funcionamento. Por favor, tente novamente.');
         }
-        updateSettings({ openDays: newOpenDays });
     };
 
     const handleTimeChange = (dayIndex: number, field: 'open' | 'close', value: string) => {
-        const newDailyHours = [...settings.dailyHours];
-        // Ensure the object exists
-        if (!newDailyHours[dayIndex]) {
-            newDailyHours[dayIndex] = { open: '00:00', close: '00:00' };
+        try {
+            if (!value || typeof dayIndex !== 'number') {
+                console.warn('Valores inválidos para handleTimeChange:', { dayIndex, field, value });
+                return;
+            }
+
+            const newDailyHours = [...(settings.dailyHours || [])];
+
+            // Ensure the object exists
+            if (!newDailyHours[dayIndex]) {
+                newDailyHours[dayIndex] = { open: '00:00', close: '00:00' };
+            }
+
+            newDailyHours[dayIndex] = { ...newDailyHours[dayIndex], [field]: value };
+            updateSettings({ dailyHours: newDailyHours });
+        } catch (error) {
+            console.error('Erro ao alterar horário:', error);
+            alert('Erro ao alterar horário. Por favor, tente novamente.');
         }
-        newDailyHours[dayIndex] = { ...newDailyHours[dayIndex], [field]: value };
-        updateSettings({ dailyHours: newDailyHours });
     };
 
     // --- Dashboard Logic ---

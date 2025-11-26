@@ -19,6 +19,7 @@ const StatusBanners: React.FC = () => {
 
             if (isStoreOpen) {
                 // Store is open - count down to closing
+                if (!todayHours.close) return;
                 const [closeH, closeM] = todayHours.close.split(':').map(Number);
                 targetTime = new Date(now);
                 targetTime.setHours(closeH, closeM, 0, 0);

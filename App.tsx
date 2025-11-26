@@ -5,6 +5,7 @@ import ProductList from './components/ProductList';
 import StatusBanners from './components/StatusBanners';
 import CartModal from './components/Modals/CartModal';
 import AdminPanel from './components/Admin/AdminPanel';
+import ErrorBoundary from './components/ErrorBoundary';
 import { ShoppingBag } from 'lucide-react';
 
 const OnlineCounter = () => {
@@ -101,7 +102,9 @@ const AppContent: React.FC = () => {
             )}
 
             {isAdminOpen && (
-                <AdminPanel onClose={handleAdminClose} />
+                <ErrorBoundary>
+                    <AdminPanel onClose={handleAdminClose} />
+                </ErrorBoundary>
             )}
         </div>
     );
@@ -109,9 +112,11 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
     return (
-        <StoreProvider>
-            <AppContent />
-        </StoreProvider>
+        <ErrorBoundary>
+            <StoreProvider>
+                <AppContent />
+            </StoreProvider>
+        </ErrorBoundary>
     );
 };
 
